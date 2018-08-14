@@ -1,7 +1,4 @@
 {
-  "scripts": {
-    "postinstall": "pip3 install numpy && pip3 install opencv-python && pip3 install dlib"
-  },
   "dependencies": {
     "cross-spawn": "^6.0.5",
     "node-fetch": "^2.2.0",
