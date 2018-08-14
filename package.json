@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "postinstall": "pip3 install numpy && pip3 install opencv-python && pip3 install dlib"
+  },
+  "dependencies": {
+    "cross-spawn": "^6.0.5",
+    "node-fetch": "^2.2.0",
+    "telegraf": "^3.22.2",
+    "tmp-promise": "^1.0.5"
+  },
+  "name": "faceswap-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "AGPL-3.0"
+}
