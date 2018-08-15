@@ -30,9 +30,9 @@ async function downloadFileToTmp(fileID) {
   return { path: tmppath, cleanup }
 }
 
-const welcomeMarkdown = `发送2张人脸的照片，换脸Bot 会将第一张图片中的人脸，换成第二张图片中的人脸。
+const welcomeHTML = `<a href="https://telegra.ph/%E6%8D%A2%E8%84%B8Bot%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B-08-15">教程：</a>发送2张人脸的照片，换脸Bot 会将第一张图片中的人脸，换成第二张图片中的人脸。
 
-⚠️换脸Bot使用 [AGPL-3.0](https://opensource.org/licenses/AGPL-3.0) 发布，请发送 /about 了解详情
+⚠️换脸Bot使用 <a href="https://opensource.org/licenses/AGPL-3.0">AGPL-3.0</a> 发布，请发送 /about 了解详情
 ⚠️换脸Bot不适用于任何非法，不道德或可疑目的`;
 
 const aboutMarkdown = `*关于此Bot*
@@ -43,8 +43,8 @@ matthewearl/faceswap：https://github.com/matthewearl/faceswap
 licenses: [AGPL-3.0](https://opensource.org/licenses/AGPL-3.0)`
 
 bot.use(session())
-bot.start((ctx) => ctx.replyWithMarkdown(welcomeMarkdown))
-bot.help((ctx) => ctx.replyWithMarkdown(welcomeMarkdown))
+bot.start((ctx) => ctx.replyWithHTML(welcomeHTML))
+bot.help((ctx) => ctx.replyWithMarkdown(welcomeMarkdown, {disable_web_page_preview: true}))
 bot.command('about', (ctx) => ctx.replyWithMarkdown(aboutMarkdown))
 bot.on('photo', async (ctx) => {
   if (typeof ctx.session.photos === 'undefined') {
