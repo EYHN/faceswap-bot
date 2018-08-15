@@ -38,8 +38,8 @@ const welcomeHTML = `<a href="https://telegra.ph/%E6%8D%A2%E8%84%B8Bot%E4%BD%BF%
 const aboutMarkdown = `*关于此Bot*
 此 Bot 基于 matthewearl 的代码添加了 telegram 的界面。
 
-matthewearl/faceswap：https://github.com/matthewearl/faceswap
-源代码：https://github.com/EYHN/faceswap-bot
+matthewearl/faceswap: https://github.com/matthewearl/faceswap
+源代码: https://github.com/EYHN/faceswap-bot
 licenses: [AGPL-3.0](https://opensource.org/licenses/AGPL-3.0)`
 
 bot.use(session())
@@ -78,7 +78,7 @@ bot.on('photo', async (ctx) => {
       photos[0].cleanup();
       photos[1].cleanup();
     }
-
+    
   }
 });
 
