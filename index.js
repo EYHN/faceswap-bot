@@ -88,3 +88,7 @@ bot.command('cancel', (ctx) => {
 });
 
 bot.startPolling()
+
+bot.catch((err) => {
+  console.log('Ooops!', err)
+})
