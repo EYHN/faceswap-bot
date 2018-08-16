@@ -11,9 +11,9 @@ const telegram = new Telegram(process.env.BOT_TOKEN)
 const bot = new Telegraf(process.env.BOT_TOKEN)
 
 async function downloadFileToTmp(fileID) {
-  const path = (await telegram.getFile(fileID)).file_path;
-  const res = await fetch(`https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${path}`);
-  const { path: tmppath, cleanup } = await tmp.file({ postfix: '.png' });
+  const urlpath = (await telegram.getFile(fileID)).file_path;
+  const res = await fetch(`https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${urlpath}`);
+  const { path: tmppath, cleanup } = await tmp.file({ postfix: path.extname(urlpath) || '.png' });
   await new Promise((resolve, reject) => {
     const dest = fs.createWriteStream(tmppath);
     res.body.pipe(dest);
@@ -43,15 +43,10 @@ matthewearl/faceswap: https://github.com/matthewearl/faceswap
 licenses: [AGPL-3.0](https://opensource.org/licenses/AGPL-3.0)`
 
 bot.use(session())
-bot.start((ctx) => ctx.replyWithHTML(welcomeHTML))
-bot.help((ctx) => ctx.replyWithMarkdown(welcomeMarkdown, {disable_web_page_preview: true}))
-bot.command('about', (ctx) => ctx.replyWithMarkdown(aboutMarkdown))
-bot.on('photo', async (ctx) => {
-  if (typeof ctx.session.photos === 'undefined') {
-    ctx.session.photos = [];
-  }
-  ctx.session.photos.push(ctx.message.photo[ctx.message.photo.length - 1].file_id);
-  if (ctx.session.photos.length >= 2) {
+
+bot.use(async (ctx, next) => {
+  await next(ctx);
+  if (ctx.session.photos instanceof Array && ctx.session.photos.length >= 2) {
     const photos = await Promise.all([
       downloadFileToTmp(ctx.session.photos.shift()),
       downloadFileToTmp(ctx.session.photos.shift())
@@ -60,26 +55,70 @@ bot.on('photo', async (ctx) => {
     try {
       await new Promise((resolve, reject) => {
         const python = spawn('python3', [path.join(__dirname, './faceswap/faceswap.py'), photos[0].path, photos[1].path, tmppath], { cwd: __dirname });
+        let message = "";
+        python.stdout.on('data', (m) => {
+          message += m.toString();
+        });
+        python.stderr.on('data', (err) => {
+          console.log(err.toString())
+        });
         python.on('close', (code) => {
           if (code !== 0) {
-            reject('失败了');
+            try {
+              const error = JSON.parse(message);
+              if (error.error === true) {
+                if (error.type === 'NoFaces') {
+                  reject(`第 ${error.meta.photo + 1} 张图片中未找到人脸。`);
+                } else if (error.type === 'TooManyFaces') {
+                  reject(`第 ${error.meta.photo + 1} 张图片中人脸过多。`);
+                }
+              }
+            } catch (err) {
+              reject('失败了！');
+            }
           } else {
-            resolve(ctx.replyWithPhoto({source: tmppath}));
+            resolve(ctx.replyWithPhoto({ source: tmppath }));
           }
         });
         python.on('error', (err) => {
-          reject('内部错误');
+          reject('内部错误！');
         });
       });
     } catch (error) {
+      console.log(error);
       await ctx.reply(error);
     } finally {
       cleanup();
       photos[0].cleanup();
       photos[1].cleanup();
     }
-    
   }
+});
+
+bot.start((ctx) => ctx.replyWithHTML(welcomeHTML))
+bot.help((ctx) => ctx.replyWithMarkdown(welcomeMarkdown, { disable_web_page_preview: true }))
+bot.command('about', (ctx) => ctx.replyWithMarkdown(aboutMarkdown))
+bot.on('photo', async (ctx) => {
+  if (typeof ctx.session.photos === 'undefined') {
+    ctx.session.photos = [];
+  }
+  ctx.session.photos.push(ctx.message.photo[ctx.message.photo.length - 1].file_id);
+});
+
+bot.on('document', async (ctx) => {
+  if (typeof ctx.session.photos === 'undefined') {
+    ctx.session.photos = [];
+  }
+  if (typeof ctx.message.document.mime_type === 'string' && ctx.message.document.mime_type.startsWith('image')) {
+    ctx.session.photos.push(ctx.message.document.file_id);
+  }
+});
+
+bot.on('sticker', async (ctx) => {
+  if (typeof ctx.session.photos === 'undefined') {
+    ctx.session.photos = [];
+  }
+  ctx.session.photos.push(ctx.message.sticker.file_id);
 });
 
 bot.command('cancel', (ctx) => {

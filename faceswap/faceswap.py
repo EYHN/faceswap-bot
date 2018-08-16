@@ -46,6 +46,7 @@ from `<head image>` replaced with the facial features from `<face image>`.
 import cv2
 import dlib
 import numpy
+import json
 
 import sys
 
@@ -167,6 +168,8 @@ def transformation_from_points(points1, points2):
 
 def read_im_and_landmarks(fname):
     im = cv2.imread(fname, cv2.IMREAD_COLOR)
+    if im.shape[2] == 4:
+        im = cv2.cvtColor(im, cv2.COLOR_BGRA2BGR)
     im = cv2.resize(im, (im.shape[1] * SCALE_FACTOR,
                          im.shape[0] * SCALE_FACTOR))
     s = get_landmarks(im)
@@ -199,8 +202,23 @@ def correct_colours(im1, im2, landmarks1):
     return (im2.astype(numpy.float64) * im1_blur.astype(numpy.float64) /
                                                 im2_blur.astype(numpy.float64))
 
-im1, landmarks1 = read_im_and_landmarks(sys.argv[1])
-im2, landmarks2 = read_im_and_landmarks(sys.argv[2])
+try:
+    im1, landmarks1 = read_im_and_landmarks(sys.argv[1])
+except TooManyFaces:
+    print(json.dumps({'error':True, 'type':'TooManyFaces', 'meta': {'photo': 0}}))
+    sys.exit(1)
+except NoFaces:
+    print(json.dumps({'error':True, 'type':'NoFaces', 'meta': {'photo': 0}}))
+    sys.exit(1)
+
+try:
+    im2, landmarks2 = read_im_and_landmarks(sys.argv[2])
+except TooManyFaces:
+    print(json.dumps({'error':True, 'type':'TooManyFaces', 'meta': {'photo': 1}}))
+    sys.exit(1)
+except NoFaces:
+    print(json.dumps({'error':True, 'type':'NoFaces', 'meta': {'photo': 1}}))
+    sys.exit(1)
 
 M = transformation_from_points(landmarks1[ALIGN_POINTS],
                                landmarks2[ALIGN_POINTS])
